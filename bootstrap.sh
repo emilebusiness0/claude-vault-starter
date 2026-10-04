@@ -48,6 +48,17 @@ done
 [ -x "$HOME/.local/bin/claude" ] || { echo "Claude Code did not install. Run this same line again."; exit 1; }
 claude --version
 
+say "4b/6 Installing the Claude desktop app (Linux beta)..."
+if ! dpkg -s claude-desktop >/dev/null 2>&1; then
+  # Anthropic's apt repository, as in code.claude.com/docs/en/desktop-linux. Updates come with apt upgrade.
+  sudo curl -fsSLo /usr/share/keyrings/claude-desktop-archive-keyring.asc https://downloads.claude.ai/claude-desktop/key.asc
+  echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/claude-desktop-archive-keyring.asc] https://downloads.claude.ai/claude-desktop/apt/stable stable main" | sudo tee /etc/apt/sources.list.d/claude-desktop.list >/dev/null
+  sudo apt-get update -qq
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq claude-desktop >/dev/null \
+    || echo "The desktop app did not install; everything else still works in the Terminal."
+fi
+dpkg -s claude-desktop 2>/dev/null | grep -m1 '^Version' || true
+
 say "5/6 Setting up your vault and its rules..."
 if [ -d "$KIT/.git" ]; then git -C "$KIT" pull -q --ff-only; else git clone -q "$REPO" "$KIT"; fi
 node "$KIT/install.mjs" --name "$NAME"
@@ -75,7 +86,8 @@ else
   fi
 fi
 
-say "Done. Opening Claude. The first time, it asks you to sign in with your Claude account."
+say "Done. Opening Claude here for the first-day setup. The first time, it asks you to sign in with your Claude account."
+echo "After today you can also use the desktop app: open \"Claude\" from the app launcher, go to the Code tab and pick the vault folder."
 [ -n "$CI" ] && exit 0
 cd "$VAULT"
 exec "$HOME/.local/bin/claude" "First session on this computer. Read $KIT/SETUP.md and follow it." < /dev/tty

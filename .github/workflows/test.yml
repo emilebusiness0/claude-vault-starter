@@ -25,3 +25,5 @@ jobs:
         run: VAULT_KIT_CI=1 VAULT_KIT_REPO="$GITHUB_WORKSPACE" bash bootstrap.sh Beckett
       - name: All hook tests
         run: bash ~/.claude/skills/system/run-tests.sh
+      - name: Desktop app installed
+        run: dpkg -s claude-desktop | grep -E '^(Status|Version)'
