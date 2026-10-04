@@ -13,7 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/emilebusiness0/claude-vault-starter
 
 It asks for your Linux password once if it needs one, then two sign-ins: GitHub (for the backup) and Claude (a Pro plan or higher). Then Claude opens and takes it from there: a quick self-check, then about 50 questions so it knows who you are.
 
-To open Claude later: open Terminal, type `claude`, press Enter.
+To open Claude later: open Terminal, type `claude`, press Enter. Your Claude always runs in the Terminal. The website version at claude.ai/code is a different thing that asks for a GitHub repo; you never need it.
 
 ## What it installs
 

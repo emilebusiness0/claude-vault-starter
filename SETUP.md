@@ -17,7 +17,7 @@ Also check, without asking them anything:
 ## 3. Tell them how to use it from now on
 
 Three short lines:
-- To open Claude later: open the Terminal app, type `claude`, press Enter. The notebook and the rules load on their own every time.
+- To open Claude later: open the Terminal app, type `claude`, press Enter. The notebook and the rules load on their own every time. Never claude.ai/code: that website version runs in the cloud, asks for a GitHub repo and does not see the notebook.
 - On the phone or in a browser (claude.ai or the Claude app), the chat does not see the notebook. Big things happen here; quick questions can happen there.
 - Say "remember this" any time, and it goes in the notebook. They can also just talk: you save what matters on your own.
 
