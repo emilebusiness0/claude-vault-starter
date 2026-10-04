@@ -11,9 +11,9 @@ Sets up Claude Code with a personal notebook (a "vault" of plain text notes) and
 curl -fsSL https://raw.githubusercontent.com/emilebusiness0/claude-vault-starter/main/bootstrap.sh | bash -s YourName
 ```
 
-It asks for your Linux password once if it needs one, then two sign-ins: GitHub (for the backup) and Claude (a Pro plan or higher). Then Claude opens and takes it from there: a quick self-check, then about 50 questions so it knows who you are.
+It asks for your Linux password once if it needs one, then two sign-ins: GitHub (for the backup) and Claude (a Pro plan or higher). Then the Claude desktop app opens (official Linux beta): sign in, click the Code tab, pick the `vault` folder and say hi. Claude takes it from there: a quick self-check, then about 50 questions so it knows who you are.
 
-To open Claude later: open Terminal, type `claude`, press Enter. Your Claude always runs in the Terminal. The website version at claude.ai/code is a different thing that asks for a GitHub repo; you never need it.
+To open Claude later: open the Claude app from the app launcher, click the Code tab and pick the `vault` folder (or type `claude` in a Terminal). The website version at claude.ai/code is a different thing that asks for a GitHub repo; you never need it.
 
 ## What it installs
 

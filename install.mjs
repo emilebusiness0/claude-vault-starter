@@ -55,7 +55,9 @@ const MARK = "<!-- vault-kit -->";
 const claudeMd = path.join(CLAUDE, "CLAUDE.md");
 const ours = `${MARK}\n${render(fs.readFileSync(path.join(KIT, "claude", "CLAUDE.md"), "utf8"))}`;
 const existing = fs.existsSync(claudeMd) ? fs.readFileSync(claudeMd, "utf8") : "";
-if (!existing.includes(MARK)) { fs.writeFileSync(claudeMd, existing ? `${existing.trimEnd()}\n\n${ours}` : ours); done.push(claudeMd); }
+const before = existing.includes(MARK) ? existing.slice(0, existing.indexOf(MARK)).trimEnd() : existing.trimEnd();
+const next = before ? `${before}\n\n${ours}` : ours;
+if (next !== existing) { fs.writeFileSync(claudeMd, next); done.push(claudeMd); }
 
 // 5. The hooks, merged into settings.json. Earlier entries from this kit are replaced, everything else is kept.
 const H = path.join(SKILL, "hooks");

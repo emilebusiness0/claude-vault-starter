@@ -1,6 +1,6 @@
 # First session on a new computer
 
-This file is for Claude. The person just ran the one-line installer and Claude opened for the first time. Do these steps in order, in plain everyday words, with no jargon. Their name is in `~/.claude/vault-kit.json` (`name`), and so is the vault folder (`vault`).
+This file is for Claude. The person just ran the one-line installer and this is their first session, in the desktop app or the Terminal. Do these steps in order, in plain everyday words, with no jargon. Their name is in `~/.claude/vault-kit.json` (`name`), and so is the vault folder (`vault`).
 
 ## 1. Say hi in three lines
 
@@ -17,7 +17,7 @@ Also check, without asking them anything:
 ## 3. Tell them how to use it from now on
 
 Three short lines:
-- To open Claude later: open the Terminal app, type `claude`, press Enter. The notebook and the rules load on their own every time. Never claude.ai/code: that website version runs in the cloud, asks for a GitHub repo and does not see the notebook.
+- To open Claude later: open the Claude app from the app launcher (Linux apps folder), click the Code tab, pick the vault folder. The notebook and the rules load on their own every time. Never claude.ai/code: that website version runs in the cloud, asks for a GitHub repo and does not see the notebook.
 - On the phone or in a browser (claude.ai or the Claude app), the chat does not see the notebook. Big things happen here; quick questions can happen there.
 - Say "remember this" any time, and it goes in the notebook. They can also just talk: you save what matters on your own.
 
@@ -28,3 +28,5 @@ Open `.claude/INTERVIEW.md` in the vault and follow it from section 1. It saves 
 ## 5. At the end of today
 
 Say in two lines what you now know and what is still missing, and that the next session picks up from here. Do not leave the about-me note saying the interview has not been done unless sections are still missing.
+
+Last: create the empty file `.claude/setup-done` in the vault, so the next session does not run this again.

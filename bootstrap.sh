@@ -86,8 +86,16 @@ else
   fi
 fi
 
-say "Done. Opening Claude here for the first-day setup. The first time, it asks you to sign in with your Claude account."
-echo "After today you can also use the desktop app: open \"Claude\" from the app launcher, go to the Code tab and pick the vault folder."
 [ -n "$CI" ] && exit 0
+if dpkg -s claude-desktop >/dev/null 2>&1; then
+  say "Done. Opening the Claude app."
+  echo "1. Sign in with your Claude account."
+  echo "2. Click the Code tab, choose the folder called vault, and type: hi"
+  echo "   Claude takes it from there. You can close this Terminal."
+  echo "Next time: open Claude from the app launcher (it is in the Linux apps folder)."
+  (nohup claude-desktop >/dev/null 2>&1 &)
+  exit 0
+fi
+say "Done. Opening Claude here. The first time, it asks you to sign in with your Claude account."
 cd "$VAULT"
-exec "$HOME/.local/bin/claude" "First session on this computer. Read $KIT/SETUP.md and follow it." < /dev/tty
+exec "$HOME/.local/bin/claude" "hi" < /dev/tty
