@@ -13,6 +13,8 @@ jobs:
         run: bash ~/.claude/skills/system/run-tests.sh
       - name: Vault is a git repo with a first commit
         run: git -C ~/vault log --oneline | tail -1
+      - name: Settings - built-in memory off, saves need no click
+        run: jq -e '.autoMemoryEnabled == false and .permissions.defaultMode == "acceptEdits" and (.permissions.additionalDirectories | index(env.HOME + "/vault"))' ~/.claude/settings.json
   debian-like-chromebook:
     runs-on: ubuntu-latest
     container: debian:bookworm

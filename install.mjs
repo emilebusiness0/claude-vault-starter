@@ -83,6 +83,19 @@ for (const [event, groups] of Object.entries(ourHooks)) {
   const kept = (settings.hooks[event] || []).map(g => ({ ...g, hooks: (g.hooks || []).filter(h => !String(h.command || "").includes(H)) })).filter(g => g.hooks.length);
   settings.hooks[event] = [...kept, ...groups];
 }
+// Saving notes must not stop for an "Allow?" click: edits are accepted, and the vault counts as
+// a working folder wherever Claude starts. Sending, buying and deleting still ask (source-check guards them).
+// Claude Code's built-in memory folder would compete with the vault; the vault is the only memory.
+settings.autoMemoryEnabled = false;
+settings.permissions ||= {};
+settings.permissions.defaultMode ||= "acceptEdits";
+const dirs = new Set(settings.permissions.additionalDirectories || []); dirs.add(VAULT);
+settings.permissions.additionalDirectories = [...dirs];
+const allow = new Set(settings.permissions.allow || []);
+for (const r of [`Bash(git -C ${VAULT}:*)`, "Bash(git status:*)", "Bash(git log:*)", "Bash(git diff:*)",
+  `Bash(bash ${path.join(SKILL, "run-tests.sh")})`, "Bash(bash ~/.claude/skills/system/run-tests.sh)",
+  `Bash(node ${path.join(SKILL, "import-history.mjs")}:*)`, "Bash(gh auth status)", "Bash(ls:*)", "Bash(wc:*)"]) allow.add(r);
+settings.permissions.allow = [...allow];
 fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2) + "\n");
 done.push(settingsFile);
 
