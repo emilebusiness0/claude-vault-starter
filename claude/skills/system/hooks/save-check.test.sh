@@ -21,7 +21,7 @@ reset() {
 | `an old dead phrase` | The truth. | 2026-09-20 | [[x]] |
 EOF
   echo "- [Lucia](x.md) — her notes" > "$TMP/MEMORY.md"
-  # The turn started 100 seconds ago, and the prompt Emile typed.
+  # The turn started 100 seconds ago, and the prompt the person typed.
   echo $(( $(date +%s) - 100 )) > "$S/$SID.start"
   echo "ok lets finish it" > "$S/$SID.prompt"
 }
@@ -206,7 +206,7 @@ expect "an action from before this turn started is not counted" 0
 reset; echo "hosted on Cloudflare" > "$V/decisions/hosting.md"; act "npm run deploy"; decide "SAVED: $V/decisions/hosting.md" "REPLACED: hosted on wix => Cloudflare"; run
 expect "naming a real replaced fact needs no extra ask" 0
 
-# ---- short on screen (2026-09-29, Emile: the reply was too long) ----
+# ---- short on screen (the reply was too long) ----
 reset; echo x > "$V/decisions/hosting.md"; echo y > "$V/projects/site.md"
 decide "SAVED: decisions/hosting.md projects/site.md" "REPLACED: nothing"; run
 expect "vault-relative paths are accepted, two in a row stay two" 0 "Vault: 2 saved, 0 replaced."

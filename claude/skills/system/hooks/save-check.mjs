@@ -28,7 +28,7 @@
 //   - REPLACED: nothing, or NO_SAVE_NEEDED, is questioned once when the reply
 //     says something switched or the prompt says "from now on".
 //   - Its own count of blocks per turn, three at most, then the turn ends and
-//     Emile is told what was left.
+//     the person is told what was left.
 // Which files count as living, history or machine output is imported from
 // Lucia's vault-audit.js, so this cannot disagree with the morning audit.
 // Tests: save-check.test.sh beside it. Every stop is one line in save-check.log.

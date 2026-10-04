@@ -4,7 +4,7 @@
 // restart, a POST to a real host, a message sent, a page published.
 //
 // Why (2026-09-29): the Cloudflare move was something a session did, not
-// something Emile said, and the old stop check only ever asked about his words.
+// something the person said, and the old stop check only ever asked about their words.
 // save-check reads this file at the end of the turn and lists these actions in
 // its question, and refuses a bare "nothing to save" once when any happened, so
 // the session cannot skip past its own biggest change. Read-only work is never

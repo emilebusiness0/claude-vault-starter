@@ -5,7 +5,7 @@
 //
 // Why: on 2026-09-28 twenty notes were over 3,000 words. The audit had flagged
 // them red on the board every morning, and nobody acted, because the board is
-// read by Emile, not by the session that made the note grow. Sessions append a
+// read by the person, not by the session that made the note grow. Sessions append a
 // dated section, the file crosses the line, and the one reader with the context
 // to split it has moved on. This puts the message in front of that reader, at
 // the moment it happens. The rule itself (which files, which kinds, which
