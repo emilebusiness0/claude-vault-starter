@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# SessionStart hook for the `system` skill: puts the rules into context on every
+# fresh session, so procedure arrives with the task instead of sitting in a file.
+# Same shape as the superpowers plugin's session-start hook, which is proven on
+# this Mac. A rule that only loads when the model decides to trigger it is a rule
+# that sometimes does not load; this one always does.
+set -euo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "${HERE}/.." && pwd)"
+body=$(sed '1{/^---$/!q;};1,/^---$/d' "${ROOT}/SKILL.md" 2>/dev/null || echo "(system skill unreadable)")
+# The session standard rides in its own block: it covers every working session.
+standard=$(cat "${ROOT}/session-standard.md" 2>/dev/null || echo "(session standard unreadable)")
+# The hard rules arrive at every start and after every compaction (matcher covers both),
+# re-read from disk each time so a summary cannot drop them. hard-rules.test.sh checks the quotes.
+hard=$(cat "${ROOT}/hard-rules.md" 2>/dev/null || echo "(hard rules unreadable)")
+esc() { local s="$1"; s="${s//\\/\\\\}"; s="${s//\"/\\\"}"; s="${s//$'\n'/\\n}"; s="${s//$'\r'/\\r}"; s="${s//$'\t'/\\t}"; printf '%s' "$s"; }
+ctx="<session_standard>\nHow every working session with {{NAME}} is run, on any project. It applies to this whole session.\n\n$(esc "$standard")\n</session_standard>\n\n<hard_rules>\nThe rules {{NAME}} has stated most firmly, kept word for word. They hold in every session on every project.\n\n$(esc "$hard")\n</hard_rules>\n\n<system_rules>\nThese are the standing rules for how work is done and remembered (the 'system' skill). They apply to this whole session.\n\n$(esc "$body")\n</system_rules>"
+printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$ctx"
+exit 0

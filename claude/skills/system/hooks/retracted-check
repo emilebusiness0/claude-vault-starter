@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""Is every retraction in RETRACTED.md one the morning audit can actually read?
+
+The audit (`deadPhrases()` in the vault audit) reads only table rows
+shaped `| `phrase` | ... |`. On 2026-09-23, 17 retractions written since 09-20 were
+found as prose ("Dead phrases: ...") or as a row with text outside its quote marks,
+so the audit had never checked 45 dead claims. Converting them found 8 still alive.
+
+Prints one line per problem and exits 1, or prints nothing and exits 0:
+  - a row whose phrase cell is not one backticked phrase;
+  - a prose "Dead phrase(s)" / "Phrases to hunt for" line below the marker comment
+    whose first quoted phrase has no table row.
+Run by ~/.claude/hooks/vault-autocommit.sh after every turn; tests in
+retracted-check.test.sh next to this file.
+"""
+import re
+import sys
+
+MARKER = "<!-- retractions above this line were converted to table rows on 2026-09-23 -->"
+ROW = re.compile(r"^\|\s*`([^`]+)`\s*\|")          # exactly what the audit parses
+ROWISH = re.compile(r"^\|\s*`")                      # anything that tries to be a row
+PROSE = re.compile(r"^\W*(dead phrases?|phrases to hunt for)\b", re.I)
+QUOTED = re.compile(r"[\"“]([^\"”]{4,})[\"”]")
+
+path = sys.argv[1] if len(sys.argv) > 1 else "RETRACTED.md"
+try:
+    lines = open(path, encoding="utf-8").read().split("\n")
+except OSError:
+    sys.exit(0)
+
+phrases = {m.group(1).strip().lower() for l in lines if (m := ROW.match(l))}
+below = False
+problems = []
+for n, line in enumerate(lines, 1):
+    if line.strip() == MARKER:
+        below = True
+        continue
+    if ROWISH.match(line) and not ROW.match(line):
+        problems.append(f"line {n}: the phrase cell is not one backticked phrase, so the audit skips this row")
+    if below and PROSE.match(line):
+        quoted = QUOTED.findall(line)
+        if not quoted or quoted[0].strip().lower() not in phrases:
+            problems.append(f"line {n}: a prose retraction the audit cannot read; add each dead phrase as a table row `| `phrase` | what is true now | date | where |`")
+
+for p in problems:
+    print(p)
+sys.exit(1 if problems else 0)

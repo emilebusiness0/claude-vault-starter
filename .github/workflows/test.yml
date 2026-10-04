@@ -1,0 +1,25 @@
+name: install-and-test
+on: [push, workflow_dispatch]
+jobs:
+  ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: One-line install (as a new user would run it)
+        run: VAULT_KIT_CI=1 VAULT_KIT_REPO="$GITHUB_WORKSPACE" bash bootstrap.sh Beckett
+      - name: Install again (must be safe to rerun)
+        run: VAULT_KIT_CI=1 VAULT_KIT_REPO="$GITHUB_WORKSPACE" bash bootstrap.sh Beckett
+      - name: All hook tests
+        run: bash ~/.claude/skills/system/run-tests.sh
+      - name: Vault is a git repo with a first commit
+        run: git -C ~/vault log --oneline | tail -1
+  debian-like-chromebook:
+    runs-on: ubuntu-latest
+    container: debian:bookworm
+    steps:
+      - run: apt-get update -qq && apt-get install -y -qq sudo git
+      - uses: actions/checkout@v4
+      - name: One-line install on Debian 12 (what a Chromebook's Linux runs)
+        run: VAULT_KIT_CI=1 VAULT_KIT_REPO="$GITHUB_WORKSPACE" bash bootstrap.sh Beckett
+      - name: All hook tests
+        run: bash ~/.claude/skills/system/run-tests.sh

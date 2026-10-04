@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+"""Keep every vault note connected in Obsidian's graph, reading links the way Obsidian does.
+
+Run by ~/.claude/hooks/vault-autocommit.sh after every turn; tests in
+graph-repair.test.sh next to this file.
+
+Why this replaced the hook's old grep, 2026-09-28. The old check asked "does the
+file contain `[[` anywhere?" and its repair stamped an Index line after line 1.
+When line 1 was `---`, the start of a note's properties, the line landed inside
+the properties block. Obsidian does not read links there (the block is YAML, and
+that line is not valid YAML), so the three weekly numbers reports (Search Console
+and the CRM, written by an agent) floated alone in the graph from their
+first day, 2026-09-15. And the old check then found `[[` in each of them and
+never flagged them again. The owner saw them in graph view on 2026-09-28.
+
+So links are read as Obsidian reads them:
+  - fenced code, inline code and indented code hold no links;
+  - in the properties block, only a property whose value is a quoted wikilink
+    (`key: "[[x]]"` or `- "[[x]]"`) counts, which is how Obsidian stores one;
+  - a link counts only if it resolves to a note that exists.
+
+It repairs two things, both deterministic:
+  1. An Index line stranded inside the properties block (the old bug) is moved
+     below the note's title. Always, whether or not the note is an orphan.
+  2. A report with no link in or out gets the Index line below its title.
+Anything else with no link in or out is printed, never guessed at: inventing a
+cross-reference is worse than leaving a loose node.
+
+Output, one line each: `repaired <path>` and `orphan <path>`. Always exits 0.
+"""
+import os
+import re
+import sys
+
+VAULT = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("VAULT_DIR") or os.path.expanduser("~/vault")
+INDEX_LINE = "*Index: [[README]]*"
+# Expected to float: drawings are linked by hand from README, per-run machine state
+# is described once by README and never meant to be a node.
+EXEMPT = ("Excalidraw/", "queue/runs/")
+
+FENCE = re.compile(r"^(```|~~~).*?^\1[^\n]*$", re.S | re.M)
+INDENTED = re.compile(r"^ {4,}\S[^\n]*$", re.M)
+INLINE = re.compile(r"`[^`\n]*`")
+WIKI = re.compile(r"\[\[([^\]\n]+?)\]\]")
+MDLINK = re.compile(r"\]\(([^)\s]+?\.md)(?:#[^)]*)?\)")
+PROP_LINK = re.compile(r"""^\s*(?:[A-Za-z0-9_-]+:\s*|-\s+)["']\[\[([^\]\n]+?)\]\]["']\s*$""")
+
+
+def split_front(text):
+    """(frontmatter lines or None, index of the line after the closing ---)."""
+    lines = text.split("\n")
+    if not lines or lines[0].strip() != "---":
+        return None, 0
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return lines[1:i], i + 1
+    return None, 0
+
+
+def link_targets(text):
+    fm, body_start = split_front(text)
+    targets = []
+    if fm is not None:
+        for line in fm:
+            m = PROP_LINK.match(line)
+            if m:
+                targets.append(m.group(1))
+        text = "\n".join(text.split("\n")[body_start:])
+    body = INLINE.sub("", INDENTED.sub("", FENCE.sub("", text)))
+    targets += [m.group(1) for m in WIKI.finditer(body)]
+    targets += [m.group(1) for m in MDLINK.finditer(body) if not re.match(r"^[a-z]+:", m.group(1), re.I)]
+    return [t.split("|")[0].split("#")[0].strip() for t in targets if t.strip()]
+
+
+def notes(vault):
+    out = []
+    for root, dirs, files in os.walk(vault):
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        for f in files:
+            if f.endswith(".md"):
+                out.append(os.path.relpath(os.path.join(root, f), vault))
+    return sorted(out)
+
+
+def resolver(paths):
+    exact = {p[:-3].lower(): p for p in paths}
+    by_name = {}
+    for p in paths:
+        by_name.setdefault(os.path.basename(p)[:-3].lower(), []).append(p)
+
+    def resolve(link, src):
+        want = link.replace("%20", " ").strip().lstrip("/")
+        if want.lower().endswith(".md"):
+            want = want[:-3]
+        low = want.lower()
+        if low in exact:
+            return exact[low]
+        rel = os.path.normpath(os.path.join(os.path.dirname(src), want)).lower()
+        if rel in exact:
+            return exact[rel]
+        if "/" in low:
+            tail = sorted(p for p in paths if p[:-3].lower().endswith("/" + low))
+            return tail[0] if tail else None
+        hits = by_name.get(low, [])
+        same = [h for h in hits if os.path.dirname(h) == os.path.dirname(src)]
+        return (same or sorted(hits, key=len) or [None])[0]
+    return resolve
+
+
+def insert_below_title(text, line):
+    """Put `line` below the first H1 after the properties block, or right after the block."""
+    lines = text.split("\n")
+    _, start = split_front(text)
+    at = start
+    for i in range(start, len(lines)):
+        if lines[i].startswith("# "):
+            at = i + 1
+            break
+    block = ["", line, ""]
+    # Do not stack blank lines on the ones already there.
+    while at < len(lines) and lines[at].strip() == "":
+        lines.pop(at)
+    return "\n".join(lines[:at] + block + lines[at:])
+
+
+def unstrand(text):
+    """Move an Index line out of the properties block. Returns (text, moved?)."""
+    fm, start = split_front(text)
+    if fm is None:
+        return text, False
+    stranded = [l for l in fm if l.strip().startswith("*Index:")]
+    if not stranded:
+        return text, False
+    lines = text.split("\n")
+    kept = ["---"] + [l for l in fm if not l.strip().startswith("*Index:")]
+    # Drop blank lines the stamp left at the top of the block.
+    while len(kept) > 1 and kept[1].strip() == "":
+        kept.pop(1)
+    rebuilt = "\n".join(kept + ["---"] + lines[start:])
+    for line in stranded:
+        if line.strip() not in rebuilt:
+            rebuilt = insert_below_title(rebuilt, line.strip())
+    return rebuilt, True
+
+
+def main():
+    paths = notes(VAULT)
+    texts = {}
+    for p in paths:
+        try:
+            texts[p] = open(os.path.join(VAULT, p), encoding="utf-8").read()
+        except (OSError, UnicodeDecodeError):
+            texts[p] = ""
+
+    # Repair 1: stranded Index lines, before anything is counted.
+    for p in paths:
+        fixed, moved = unstrand(texts[p])
+        if moved:
+            open(os.path.join(VAULT, p), "w", encoding="utf-8").write(fixed)
+            texts[p] = fixed
+            print(f"repaired {p}")
+
+    resolve = resolver(paths)
+    out_n, in_n = {p: 0 for p in paths}, {p: 0 for p in paths}
+    for p in paths:
+        for link in link_targets(texts[p]):
+            t = resolve(link, p)
+            if t and t != p:
+                out_n[p] += 1
+                in_n[t] += 1
+
+    for p in paths:
+        if out_n[p] or in_n[p] or p.startswith(EXEMPT):
+            continue
+        if p.startswith("reports/"):
+            fixed = insert_below_title(texts[p], INDEX_LINE)
+            open(os.path.join(VAULT, p), "w", encoding="utf-8").write(fixed)
+            print(f"repaired {p}")
+        else:
+            print(f"orphan {p}")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:  # a hook must never take a turn down
+        print(f"error {e}", file=sys.stderr)
+    sys.exit(0)
