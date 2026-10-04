@@ -42,7 +42,10 @@ gh --version | head -1
 say "4/6 Installing Claude Code..."
 export PATH="$HOME/.local/bin:$PATH"
 if ! command -v claude >/dev/null; then curl -fsSL https://claude.ai/install.sh | bash; fi
-grep -q '.local/bin' "$HOME/.bashrc" 2>/dev/null || echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+for rc in "$HOME/.bashrc" "$HOME/.profile"; do
+  grep -q 'local/bin:\$PATH' "$rc" 2>/dev/null || echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$rc"
+done
+[ -x "$HOME/.local/bin/claude" ] || { echo "Claude Code did not install. Run this same line again."; exit 1; }
 claude --version
 
 say "5/6 Setting up your vault and its rules..."
@@ -75,4 +78,4 @@ fi
 say "Done. Opening Claude. The first time, it asks you to sign in with your Claude account."
 [ -n "$CI" ] && exit 0
 cd "$VAULT"
-exec claude "First session on this computer. Read $KIT/SETUP.md and follow it." < /dev/tty
+exec "$HOME/.local/bin/claude" "First session on this computer. Read $KIT/SETUP.md and follow it." < /dev/tty
